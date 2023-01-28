@@ -186,21 +186,23 @@ def model_training():
     p.heading("Model Trainings")
     if len(app.tables["model_trainings"]) == 0:
         p.print("You haven't trained any models yet.")
-    label_counts = app.tables["labels"].select(
-        "label, COUNT(*) as c",
-        "WHERE label != 'Unclear' GROUP BY label").column_values()
-    if min(label_counts["c"]) < 2 or len(label_counts["c"]) < 3:
-        p.print("""
-            In order to train a model, you must have at least two labeled
-            reviews for each of 'Positive', 'Negative', and 'Neutral'.
-            Please label more reviews.
-        """)
-        p.bar_chart(
-            label_counts["label"], label_counts["c"],
-            title="Current label counts")
+    label_count_message = (
+        "In order to train a model, you must have at least two labeled "
+        "reviews for each of 'Positive', 'Negative', and 'Neutral'.")
+    if len(app.tables["labels"]) == 0:
+        p.print("Please label some reviews.  " + label_count_message)
     else:
-        if p.button("Start new training"):
-            train_new_model()
+        label_counts = app.tables["labels"].select(
+            "label, COUNT(*) as c",
+            "WHERE label != 'Unclear' GROUP BY label").column_values()
+        if min(label_counts["c"]) < 2 or len(label_counts["c"]) < 3:
+            p.print(label_count_message + "  Please label more reviews.")
+            p.bar_chart(
+                label_counts["label"], label_counts["c"],
+                title="Current label counts")
+        else:
+            if p.button("Start new training"):
+                train_new_model()
     if len(app.tables["model_trainings"]) > 0:
         p.data_table(app.tables["model_trainings"].select(
             "*", "ORDER BY start_time DESC"))
